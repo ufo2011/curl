@@ -1,5 +1,10 @@
-VC*/src/*curl.vcproj.dist
-VC*/lib/*curl.vcproj.dist
-VC*/src/*curl.vcxproj.dist
-VC*/lib/*curl.vcxproj.dist
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+#
+# SPDX-License-Identifier: curl
 
+*.ncb
+*.opensdf
+*.sdf
+*.suo
+*.user
+*.vcxproj
