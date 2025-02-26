@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,6 +18,8 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 
 #include "curl_setup.h"
@@ -27,18 +29,15 @@
 /*
  * NTLM details:
  *
- * https://davenport.sourceforge.io/ntlm.html
+ * https://davenport.sourceforge.net/ntlm.html
  * https://www.innovation.ch/java/ntlm.html
  */
-
-#define DEBUG_ME 0
 
 #include "urldata.h"
 #include "sendf.h"
 #include "strcase.h"
 #include "http_ntlm.h"
 #include "curl_ntlm_core.h"
-#include "curl_ntlm_wb.h"
 #include "curl_base64.h"
 #include "vauth/vauth.h"
 #include "url.h"
@@ -53,12 +52,6 @@
 #include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
-
-#if DEBUG_ME
-# define DEBUG_OUT(x) x
-#else
-# define DEBUG_OUT(x) Curl_nop_stmt
-#endif
 
 CURLcode Curl_input_ntlm(struct Curl_easy *data,
                          bool proxy,         /* if proxy or not */
@@ -77,7 +70,7 @@ CURLcode Curl_input_ntlm(struct Curl_easy *data,
   if(checkprefix("NTLM", header)) {
     header += strlen("NTLM");
 
-    while(*header && ISSPACE(*header))
+    while(ISSPACE(*header))
       header++;
 
     if(*header) {
@@ -122,7 +115,7 @@ CURLcode Curl_input_ntlm(struct Curl_easy *data,
 }
 
 /*
- * This is for creating ntlm header output
+ * This is for creating NTLM header output
  */
 CURLcode Curl_output_ntlm(struct Curl_easy *data, bool proxy)
 {
@@ -132,7 +125,7 @@ CURLcode Curl_output_ntlm(struct Curl_easy *data, bool proxy)
   struct bufref ntlmmsg;
 
   /* point to the address of the pointer that holds the string to send to the
-     server, which is for a plain host or for a HTTP proxy */
+     server, which is for a plain host or for an HTTP proxy */
   char **allocuserpwd;
 
   /* point to the username, password, service and host */
@@ -186,10 +179,10 @@ CURLcode Curl_output_ntlm(struct Curl_easy *data, bool proxy)
     passwdp = "";
 
 #ifdef USE_WINDOWS_SSPI
-  if(!s_hSecDll) {
+  if(!Curl_hSecDll) {
     /* not thread safe and leaks - use curl_global_init() to avoid */
     CURLcode err = Curl_sspi_global_init();
-    if(!s_hSecDll)
+    if(!Curl_hSecDll)
       return err;
   }
 #ifdef SECPKG_ATTR_ENDPOINT_BINDINGS
@@ -199,7 +192,7 @@ CURLcode Curl_output_ntlm(struct Curl_easy *data, bool proxy)
 
   Curl_bufref_init(&ntlmmsg);
 
-  /* connection is already authenticated, don't send a header in future
+  /* connection is already authenticated, do not send a header in future
    * requests so go directly to NTLMSTATE_LAST */
   if(*state == NTLMSTATE_TYPE3)
     *state = NTLMSTATE_LAST;
@@ -251,6 +244,12 @@ CURLcode Curl_output_ntlm(struct Curl_easy *data, bool proxy)
     break;
 
   case NTLMSTATE_LAST:
+    /* since this is a little artificial in that this is used without any
+       outgoing auth headers being set, we need to set the bit by force */
+    if(proxy)
+      data->info.proxyauthpicked = CURLAUTH_NTLM;
+    else
+      data->info.httpauthpicked = CURLAUTH_NTLM;
     Curl_safefree(*allocuserpwd);
     authp->done = TRUE;
     break;
@@ -264,10 +263,6 @@ void Curl_http_auth_cleanup_ntlm(struct connectdata *conn)
 {
   Curl_auth_cleanup_ntlm(&conn->ntlm);
   Curl_auth_cleanup_ntlm(&conn->proxyntlm);
-
-#if defined(NTLM_WB_ENABLED)
-  Curl_http_auth_cleanup_ntlm_wb(conn);
-#endif
 }
 
 #endif /* !CURL_DISABLE_HTTP && USE_NTLM */
