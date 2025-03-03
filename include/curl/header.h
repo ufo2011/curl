@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2018 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,7 +20,13 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 struct curl_header {
   char *name;    /* this might not use the same case */
@@ -36,7 +42,7 @@ struct curl_header {
 #define CURLH_TRAILER   (1<<1) /* trailers */
 #define CURLH_CONNECT   (1<<2) /* CONNECT headers */
 #define CURLH_1XX       (1<<3) /* 1xx headers */
-#define CURLH_PSEUDO    (1<<4) /* psuedo headers */
+#define CURLH_PSEUDO    (1<<4) /* pseudo headers */
 
 typedef enum {
   CURLHE_OK,
@@ -60,5 +66,9 @@ CURL_EXTERN struct curl_header *curl_easy_nextheader(CURL *easy,
                                                      unsigned int origin,
                                                      int request,
                                                      struct curl_header *prev);
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif /* CURLINC_HEADER_H */
